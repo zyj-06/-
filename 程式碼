@@ -1,0 +1,138 @@
+#include "BluetoothSerial.h"
+
+BluetoothSerial SerialBT;
+
+// ===== 感測器 =====
+#define S1 25
+#define S2 33
+#define S3 32
+#define S4 35
+#define S5 34
+
+// ===== 馬達 =====
+#define IN1 18
+#define IN2 19
+#define IN3 21
+#define IN4 22
+
+bool started = false;
+
+//====================
+// 馬達控制
+//====================
+
+void forward() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+}
+
+void turnLeft() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+}
+
+void turnRight() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+}
+
+void stopCar() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+}
+
+//====================
+// 初始化
+//====================
+
+void setup() {
+
+  Serial.begin(115200);
+
+  // 藍牙名稱
+  SerialBT.begin("LineCar");
+
+  pinMode(S1, INPUT);
+  pinMode(S2, INPUT);
+  pinMode(S3, INPUT);
+  pinMode(S4, INPUT);
+  pinMode(S5, INPUT);
+
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+
+  stopCar();
+
+  Serial.println("Waiting Bluetooth Start...");
+}
+
+//====================
+// 主程式
+//====================
+
+void loop() {
+
+  // ===== 等待藍牙啟動 =====
+  if (!started) {
+
+    stopCar();
+
+    if (SerialBT.available()) {
+
+      char cmd = SerialBT.read();
+
+      if (cmd == 'S') {
+
+        started = true;
+
+        Serial.println("START");
+      }
+    }
+
+    return;
+  }
+
+  // ===== 讀取感測器 =====
+
+  int s1 = digitalRead(S1);
+  int s2 = digitalRead(S2);
+  int s3 = digitalRead(S3);
+  int s4 = digitalRead(S4);
+  int s5 = digitalRead(S5);
+
+  // ===== 五路循跡 =====
+  // 黑線=1 白色=0
+
+  if (s3 == 1) {
+
+    forward();
+  }
+  else if (s1 == 1 || s2 == 1) {
+
+    turnLeft();
+  }
+  else if (s4 == 1 || s5 == 1) {
+
+    turnRight();
+  }
+  else {
+
+    stopCar();
+  }
+
+  delay(5);
+}
